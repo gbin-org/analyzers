@@ -10,13 +10,13 @@ inFile is the file to analyze
 outFile is the location to print output
 language is the language of the inFile
 
-Languages currently supported: 
+Languages currently supported:
 
 amharic
 arabic
 bengali
 hindi
-hungarian 
+hungarian
 indonesian
 persian
 romanian
@@ -120,21 +120,22 @@ lookupIn = codecs.open(models["Lookup"], "r", "utf-8")
 
 for line in lookupIn:
     parts = line.split("\t")
-    sf = parts[0].strip()
-    lemma = parts[1].strip()
-    if(sf not in lookup):
-       lookup[sf] = []
-    features = parts[2].strip().split(";")
-    nufeatures = []
-    for f in features:
-        try:
-            if(sys.argv[4] != "UM"):
-                nufeatures.append(orig2um[f])
-            else:
-                nufeatures.append(f)
-        except:
-            pass
-    lookup[sf].append(lemma + "\t" + ";".join(nufeatures))
+    if len(parts) > 2:
+        sf = parts[0].strip()
+        lemma = parts[1].strip()
+        if(sf not in lookup):
+           lookup[sf] = []
+        features = parts[2].strip().split(";")
+        nufeatures = []
+        for f in features:
+            try:
+                if(sys.argv[4] != "UM"):
+                    nufeatures.append(orig2um[f])
+                else:
+                    nufeatures.append(f)
+            except:
+                pass
+        lookup[sf].append(lemma + "\t" + ";".join(nufeatures))
 lookupIn.close()
 
 analyzeIn = codecs.open(options.inFile, "r", "utf-8")
@@ -146,7 +147,7 @@ for line in analyzeIn:
     if line.strip() in lookup:
        analyses = lookup[line.strip()]
        for a in analyses:
-           analyzedOutput.write(line.strip() + "\t" + a + "\n") 
+           analyzedOutput.write(line.strip() + "\t" + a + "\n")
     else:
        if(models["NN"] != "NA"):
            intermediateFile.write(" ".join(line.lower().strip().replace(" ", "_")) + " " + "\n")
@@ -171,29 +172,29 @@ if models["NN"] != "NA":
             call(["python", "../scripts/postprocessUMNetOutput.py", "toAnalyze.txt", "analyzed.nn.out", "analyzed.out2"])
         elif(models["Format"] == "Tagalog"):
             call(["python", "../scripts/postprocessTagalogNetOutput.py", "toAnalyze.txt", "analyzed.nn.out", "analyzed.out2"])
-    
+
     except:
         print("There was an error.  You might want to disable the neural network")
 
 #Otherwise, we backoff to DTL
 elif models["DTL"] != "NA":  #Do DTL Analysis
     try:
-        call([os.environ["DTL"], "--cs", "9", "--ng", "19", "--copy", "--jointMgram", "5", "--linearChain", "--order", "1", "--igNull", "--inChar", ":", "-t","toAnalyze.txt", "-a","analyzed.dtl.out", "--mi", models["DTL"]])     
-        call(["python", "../scripts/postProcessDTL.py", "analyzed.dtl.out.phraseOut", "analyzed.out2", "c", models["Format"]])   
-       
+        call([os.environ["DTL"], "--cs", "9", "--ng", "19", "--copy", "--jointMgram", "5", "--linearChain", "--order", "1", "--igNull", "--inChar", ":", "-t","toAnalyze.txt", "-a","analyzed.dtl.out", "--mi", models["DTL"]])
+        call(["python", "../scripts/postProcessDTL.py", "analyzed.dtl.out.phraseOut", "analyzed.out2", "c", models["Format"]])
+
     except:
          print("There was an error.  Is DirecTL+ installed? If not, it can be obtained at ...")
 
 #In the worst case, we skip the examples, and declare a miss
 else:
-    call("mv", "toAnalyze.txt", "analyzed.out2") 
+    call("mv", "toAnalyze.txt", "analyzed.out2")
 
 
 #We now concatenate the lookup and analyzed forms back together.  Note, this will not follow the order of the original file.
 filenames = ['analyzed.out1', 'analyzed.out2']
-outFile = codecs.open(options.outFile, "w", "utf-8")    
+outFile = codecs.open(options.outFile, "w", "utf-8")
 for filename in filenames:
-    inFile = codecs.open(filename, "r", "utf-8") 
+    inFile = codecs.open(filename, "r", "utf-8")
     for line in inFile:
         parts = line.split("\t")
         if(len(parts) == 1):
